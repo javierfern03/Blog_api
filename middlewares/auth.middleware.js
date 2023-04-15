@@ -40,10 +40,45 @@ exports.protect = catchAsync(async (req, res, next) => {
     );
   }
 
-  // if(user.passwordChangeAt){
-  //   const changedTimeStamp = c
-  // }
+  if (user.passwordChangeAt) {
+    const changedTimeStamp = parseInt(
+      user.passwordChangeAt.getTime() / 1000,
+      10
+    );
+
+    if (decoded.iat < changedTimeStamp) {
+      return next(
+        new appError(
+          'User recently changed password!, Please login again.',
+          401
+        )
+      );
+    }
+  }
 
   req.sessionUser = user;
   next();
 });
+
+exports.protectAccountOwner = catchAsync(async (req, res, next) => {
+  //validar el usuario dueño del id de la req.params, y validar el usuario en sesion
+
+  const { user, sessionUser } = req;
+
+  if (user.id !== sessionUser.id) {
+    return next(new appError('Ypu do not own this account', 401));
+  }
+  next();
+});
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.sessionUser.role)) {
+      return next(
+        new appError('You do not have permission to perform this action!'),
+        403
+      );
+    }
+    next();
+  };
+};

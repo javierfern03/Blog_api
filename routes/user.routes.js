@@ -20,15 +20,22 @@ router
   .get(userMiddleware.validationUserExist, userController.findOne)
   .patch(
     userMiddleware.validationUserExist,
+    authMiddleware.protectAccountOwner,
     validationMiddleware.updateValidation,
     userController.update
   )
-  .delete(userMiddleware.validationUserExist, userController.delete);
+  .delete(
+    userMiddleware.validationUserExist,
+    authMiddleware.protectAccountOwner,
+    authMiddleware.restrictTo('admin'),
+    userController.delete
+  );
 
 router.patch(
   '/password/:id',
   validationMiddleware.updatePasswordValidation,
   userMiddleware.validationUserExist,
+  authMiddleware.protectAccountOwner,
   authController.updatedPassword
 );
 

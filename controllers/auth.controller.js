@@ -86,3 +86,20 @@ exports.updatedPassword = catchAsync(async (req, res, next) => {
     message: ' The user password was updated succesfully',
   });
 });
+
+exports.renew = catchAsync(async (req, res, next) => {
+  const { sessionUser } = req;
+
+  const token = await generateJwt(sessionUser.id);
+
+  return res.status(200).json({
+    status: 'success',
+    token,
+    user: {
+      id: sessionUser.id,
+      name: sessionUser.name,
+      email: sessionUser.email,
+      role: sessionUser.role,
+    },
+  });
+});
