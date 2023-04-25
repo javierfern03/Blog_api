@@ -1,25 +1,48 @@
 const express = require('express');
 
-const router = express.Router();
-
 //CONTROLLERS
 const postController = require('../controllers/post.controllers');
 
 //MIDDLEWARES
 const authMiddleware = require('../middlewares/auth.middleware');
+const validationsMiddlewares = require('../middlewares/validations.middlewares');
+const postMiddlewares = require('../middlewares/post.middlewares');
+const userMiddlewares = require('../middlewares/user.middlewares');
 
-app.use(authMiddleware.protect);
+const router = express.Router();
+
+router.use(authMiddleware.protect);
 
 router
   .route('/')
   .get(postController.findAllPost)
-  .post(postController.createPost);
+  .post(validationsMiddlewares.createPostValidation, postController.createPost);
 
-router('/me', postController.findMyPost);
-router('/profile/:id', postController.findUserPost);
+router.get(
+  '/me',
+  postMiddlewares.validationExistMyPosts,
+  postController.findMyPost
+);
+
+router.get(
+  '/profile/:id',
+  userMiddlewares.validationUserExist,
+  postController.findUserPost
+);
 
 router
+  .use('/:id', postMiddlewares.validationExistPost)
   .route('/:id')
   .get(postController.findOnePost)
-  .patch(authMiddleware.protectAccountOwner, postController.updatePost)
-  .delete(authMiddleware.protectAccountOwner, postController.deletePost);
+  .patch(
+    validationsMiddlewares.createPostValidation,
+    authMiddleware.protectAccountOwner,
+    postController.updatePost
+  )
+  .delete(
+    validationsMiddlewares.createPostValidation,
+    authMiddleware.protectAccountOwner,
+    postController.deletePost
+  );
+
+module.exports = router;

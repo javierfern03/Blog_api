@@ -8,11 +8,11 @@ const Comment = db.define('comment', {
     allowNull: false,
     type: DataTypes.INTEGER,
   },
-  Text: {
+  text: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
-  UserId: {
+  userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },

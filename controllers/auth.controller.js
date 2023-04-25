@@ -50,6 +50,7 @@ exports.login = catchAsync(async (req, res, next) => {
   if (!(await bcrypt.compare(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
+
   const token = await generateJwt(user.id);
 
   res.status(200).json({

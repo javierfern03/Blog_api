@@ -17,7 +17,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   //2. validar si existe el token
   if (!token) {
     return next(
-      new appError('Ypu are not logged in!, Please log in to get access', 401)
+      new appError('You are not logged in!, Please log in to get access', 401)
     );
   }
 

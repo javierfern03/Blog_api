@@ -1,11 +1,21 @@
+const Comment = require('../models/comment.model');
+const Post = require('../models/post.model');
 const User = require('../models/user.model');
 const catchAsync = require('../utils/catchAsync');
 
 exports.findAll = catchAsync(async (req, res) => {
   const users = await User.findAll({
+    attributes: { exclude: ['password', 'passwordChangeAt', 'status'] },
     where: {
       status: 'active',
     },
+    include: [
+      {
+        model: Post,
+        attributes: { exclude: ['status'] },
+        include: [{ model: Comment }],
+      },
+    ],
   });
 
   return res.status(200).json({

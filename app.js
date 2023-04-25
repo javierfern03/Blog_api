@@ -9,8 +9,10 @@ const xss = require('xss-clean');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/error.controller');
 
-const userRouter = require('./routes/user.routes');
 const authRouter = require('./routes/auth.routes');
+const commentRouter = require('./routes/comment.routes');
+const userRouter = require('./routes/user.routes');
+const postRouter = require('./routes/post.routes');
 
 const app = express();
 const limiter = rateLimit({
@@ -33,6 +35,8 @@ app.use('/api/v1', limiter);
 //routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/user', userRouter);
+app.use('/api/v1/posts', postRouter);
+app.use('/api/v1/comments', commentRouter);
 
 app.all('*', (req, res, next) => {
   return next(
