@@ -9,6 +9,9 @@ const validationsMiddlewares = require('../middlewares/validations.middlewares')
 const postMiddlewares = require('../middlewares/post.middlewares');
 const userMiddlewares = require('../middlewares/user.middlewares');
 
+//UTILS
+const { upload } = require('../utils/multer');
+
 const router = express.Router();
 
 router.use(authMiddleware.protect);
@@ -16,7 +19,11 @@ router.use(authMiddleware.protect);
 router
   .route('/')
   .get(postController.findAllPost)
-  .post(validationsMiddlewares.createPostValidation, postController.createPost);
+  .post(
+    upload.array('postImgs', 3),
+    validationsMiddlewares.createPostValidation,
+    postController.createPost
+  );
 
 router.get(
   '/me',
@@ -31,16 +38,17 @@ router.get(
 );
 
 router
-  .use('/:id', postMiddlewares.validationExistPost)
   .route('/:id')
-  .get(postController.findOnePost)
+  .get(postMiddlewares.existPostForFoundIt, postController.findOnePost)
   .patch(
     validationsMiddlewares.createPostValidation,
+    postMiddlewares.validationExistPost,
     authMiddleware.protectAccountOwner,
     postController.updatePost
   )
   .delete(
     validationsMiddlewares.createPostValidation,
+    postMiddlewares.validationExistPost,
     authMiddleware.protectAccountOwner,
     postController.deletePost
   );

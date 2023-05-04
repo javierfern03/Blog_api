@@ -15,13 +15,13 @@ exports.findAllCommnent = catchAsync(async (req, res, next) => {
 });
 
 exports.createComment = catchAsync(async (req, res, next) => {
-  const { Text } = req.body;
+  const { text } = req.body;
   const { postId } = req.params;
   const { sessionUser } = req;
-  console.log(Text);
+
   const comment = await Comment.create({
     postId,
-    Text,
+    text,
     userId: sessionUser.id,
   });
 

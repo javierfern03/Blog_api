@@ -1,6 +1,6 @@
 const Comment = require('./comment.model');
 const Post = require('./post.model');
-const PostImg = require('./postiimg.model');
+const PostImg = require('./postImg.model');
 const User = require('./user.model');
 
 const initModel = () => {

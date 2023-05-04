@@ -2,9 +2,12 @@ const Post = require('../models/post.model');
 const User = require('../models/user.model');
 const catchAsync = require('../utils/catchAsync');
 const Comment = require('../models/comment.model');
+const { storage } = require('../utils/firebase');
+const { ref, uploadBytes, getDownloadURL } = require('firebase/storage');
+const PostImg = require('../models/postImg.model');
 
 exports.findAllPost = catchAsync(async (req, res) => {
-  const post = await Post.findAll({
+  const posts = await Post.findAll({
     where: {
       status: 'active',
     },
@@ -17,24 +20,38 @@ exports.findAllPost = catchAsync(async (req, res) => {
         attributes: ['id', 'name', 'profileImgUrl'],
       },
       {
-        model: Comment,
-        attributes: ['Text', 'createdAt'],
-        include: [
-          {
-            model: User,
-            attributes: ['name', 'profileImgUrl'],
-          },
-        ],
+        model: PostImg,
       },
     ],
     order: [['createdAt', 'DESC']],
-    limit: 5,
+    limit: 20,
   });
+
+  const postPromises = posts.map(async (post) => {
+    const postImgsPromises = post.postImgs.map(async (postImg) => {
+      const imgRef = ref(storage, postImg.postImgUrl);
+      const url = await getDownloadURL(imgRef);
+
+      postImg.postImgUrl = url;
+      return postImg;
+    });
+
+    const imgRefUser = ref(storage, post.user.profileImgUrl);
+    const urlProfile = await getDownloadURL(imgRefUser);
+    post.user.profileImgUrl = urlProfile;
+
+    const postImgResolved = await Promise.all(postImgsPromises);
+    post.postImg = postImgResolved;
+
+    return posts;
+  });
+
+  const postResolved = await Promise.all(postPromises);
 
   res.status(200).json({
     status: 'success',
-    results: post.length,
-    post,
+    results: posts.length,
+    posts: postResolved,
   });
 });
 
@@ -48,6 +65,18 @@ exports.createPost = catchAsync(async (req, res) => {
     userId: sessionUser.id,
   });
 
+  const postImgsPromises = req.files.map(async (file) => {
+    const imgRef = ref(storage, `posts/${Date.now()}-${file.originalname}`);
+    const imgUploaded = await uploadBytes(imgRef, file.buffer);
+
+    return PostImg.create({
+      postId: post.id,
+      postImgUrl: imgUploaded.metadata.fullPath,
+    });
+  });
+
+  await Promise.all(postImgsPromises);
+
   res.status(201).json({
     status: 'success',
     message: 'The post has been created',
@@ -56,11 +85,11 @@ exports.createPost = catchAsync(async (req, res) => {
 });
 
 exports.findMyPost = catchAsync(async (req, res) => {
-  const { post } = req;
+  const { myPost } = req;
 
   res.status(200).json({
     status: 'success',
-    post: post,
+    post: myPost,
   });
 });
 
@@ -87,6 +116,33 @@ exports.findUserPost = catchAsync(async (req, res) => {
 
 exports.findOnePost = catchAsync(async (req, res) => {
   const { post } = req;
+
+  //imagen de usuario dueño del post
+  const imgRefUserProfile = ref(storage, post.user.profileImgUrl);
+  const urlProfileUser = await getDownloadURL(imgRefUserProfile);
+
+  post.user.profileImgUrl = urlProfileUser;
+  //imagenes posteadas en el post
+  const postImgsPromises = post.postImgs.map(async (postImg) => {
+    const imgRef = ref(storage, postImg.postImgUrl);
+    const url = await getDownloadURL(imgRef);
+
+    postImg.postImgUrl = url;
+    return postImg;
+  });
+
+  //imagenes de los usuarios dueños el comentario en el post
+  const userImgsCommentPromises = post.comments.map(async (comment) => {
+    const imgRef = ref(storage, comment.user.profileImgUrl);
+    const url = await getDownloadURL(imgRef);
+
+    comment.user.profileImgUrl = url;
+    return comment;
+  });
+
+  const arrPromises = [...postImgsPromises, ...userImgsCommentPromises];
+
+  await Promise.all(arrPromises);
 
   res.status(200).json({
     status: 'success',
